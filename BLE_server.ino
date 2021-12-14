@@ -106,27 +106,26 @@ class MyCallbacks: public BLECharacteristicCallbacks{
       digitalWrite(THUMB_LED, HIGH);
       if(rxValue.find("1") != -1){
         turn_off_all_leds();
-        Serial.println("Checking on the Thumb");
+        Serial.println("Testing on the Thumb");
         motor_start(THUMB_LED);
         digitalWrite(SECOND_LED, HIGH);
       } else if(rxValue.find("2") != -1){
         turn_off_all_leds();
-        Serial.println("Checking on the Second metatarsal head");
+        Serial.println("Testing on the Second metatarsal head");
         motor_start(SECOND_LED);
         digitalWrite(THIRD_LED, HIGH);
       } else if(rxValue.find("3") != -1){
         turn_off_all_leds();
-        Serial.println("Checking on the Third metatarsal head");
+        Serial.println("Testing on the Third metatarsal head");
         motor_start(THIRD_LED);
         digitalWrite(FORTH_LED, HIGH);
       } else if(rxValue.find("4") != -1){
         turn_off_all_leds();
-        Serial.println("Checking on the Forth metatarsal head");
+        Serial.println("Testing on the Forth metatarsal head");
         motor_start(FORTH_LED);
         turn_off_all_leds();
       }
 
-      Serial.println();
       Serial.println("==== END RECEIVE DATA ====");
       Serial.println();
 
@@ -192,6 +191,7 @@ void setup() {
   // Start adverising (showing BLE name to connect to)
   BLEDevice::startAdvertising();
   Serial.println("Waiting for a client connection to notify...");
+  digitalWrite(THUMB_LED, HIGH);
 }
 
 void loop() {
