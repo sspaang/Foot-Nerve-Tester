@@ -6,11 +6,11 @@
 
 Servo myservo;
 
-// BLE charactieristics
-BLECharacteristic *pCharacteristic;
+BLEServer *pServer; // BLE Server
+BLECharacteristic *pCharacteristic; // BLE Charactieristics
+
 bool deviceConnected = false;
-int txValue = 0;
-char txString[2];
+String txValue = "0";
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
@@ -30,10 +30,13 @@ char txString[2];
 class MyServerCallbacks: public BLEServerCallbacks{
   void onConnect(BLEServer *pServer){
     deviceConnected = true;
+    Serial.println("Connected");
   }
 
   void onDisconnect(BLEServer *pServer){
+    Serial.println("Disconnectd");
     deviceConnected = false;
+    pServer->getAdvertising()->start();
   }
 };
 
@@ -42,9 +45,9 @@ class MyCallbacks: public BLECharacteristicCallbacks{
   
   void motor_start(int LED_POINTER){
     digitalWrite(LED_POINTER, HIGH);
-    
-    if(txValue == 0){
-      txValue = 1;  // motor is working
+
+    if(txValue == "0"){
+      txValue = "1";  // motor is working
     }
     
     for(int pos = 0; pos <= 90; pos+=2)
@@ -74,8 +77,13 @@ class MyCallbacks: public BLECharacteristicCallbacks{
       delay(200);
     }
   
-    Serial.println("#SEROFF");
+    Serial.println("Finish");
     myservo.write(0);
+    
+    if(txValue == "1"){
+        txValue = "0";  // the motor is ready
+    }
+    
     digitalWrite(LED_PIN, LOW);
     delay(1000);
     digitalWrite(LED_POINTER, LOW);
@@ -87,6 +95,20 @@ class MyCallbacks: public BLECharacteristicCallbacks{
     digitalWrite(SECOND_LED, LOW);
     digitalWrite(THIRD_LED, LOW);
     digitalWrite(FORTH_LED, LOW);
+  }
+
+  void notifyValue(){
+    // Setting the value to the characteristic
+    pCharacteristic->setValue(txValue.c_str());
+  
+    // Notify the connected client
+    pCharacteristic->notify();
+    Serial.println("Notify Value: " + txValue);
+  }
+
+  void onRead(BLECharacteristic *pCharacteristic){
+    pCharacteristic->setValue(txValue.c_str());
+    Serial.println("onRead Value: " + txValue);
   }
   
   void onWrite(BLECharacteristic *pCharacteristic){
@@ -101,7 +123,7 @@ class MyCallbacks: public BLECharacteristicCallbacks{
       }
 
       Serial.println();
-      
+
       turn_off_all_leds();
       digitalWrite(THUMB_LED, HIGH);
       if(rxValue.find("1") != -1){
@@ -125,13 +147,8 @@ class MyCallbacks: public BLECharacteristicCallbacks{
         motor_start(FORTH_LED);
         turn_off_all_leds();
       }
-
       Serial.println("==== END RECEIVE DATA ====");
       Serial.println();
-
-      if(txValue == 1){
-        txValue = 0;  // the motor is ready
-      }
     }
   }
 };
@@ -156,27 +173,28 @@ void setup() {
   BLEDevice::init("Foot Nerve Tester"); // Bluetooth name
 
   // Create the BLE Server
-  BLEServer *pServer = BLEDevice::createServer();
+  pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
 
   // Create the BLE Service
   BLEService *pService = pServer->createService(SERVICE_UUID);
 
-  // Create a BLE Characteristic
+  // Characteristic for Notification
   pCharacteristic = pService->createCharacteristic(
                                          CHARACTERISTIC_UUID_TX,
                                          BLECharacteristic::PROPERTY_NOTIFY
                                        );
-
   // BLE2902 needed to notify
   pCharacteristic->addDescriptor(new BLE2902());
 
-  // Characteristic for the receiving end
+  // Characteristic for Writing and Reading data
   BLECharacteristic *pCharacteristic = pService->createCharacteristic(
                                          CHARACTERISTIC_UUID_RX,
-                                         BLECharacteristic::PROPERTY_WRITE
+                                         BLECharacteristic::PROPERTY_WRITE |
+                                         BLECharacteristic::PROPERTY_READ
                                        );
   pCharacteristic->setCallbacks(new MyCallbacks());
+  pCharacteristic->setValue(txValue.c_str()); // inform client that motor is ready
   
   // Start the service
   pService->start();
@@ -195,16 +213,15 @@ void setup() {
 }
 
 void loop() {
+  /*
   if(deviceConnected){
-    // Conversion of txValue
-    itoa(txValue, txString, 10);
-  
     // Setting the value to the characteristic
-    pCharacteristic->setValue(txString);
+    pCharacteristic->setValue(txValue.c_str());
   
     // Notify the connected client
     pCharacteristic->notify();
-    Serial.println("Sent value: " + String(txString));
-    delay(7000);
+    Serial.println("Notify Value: " + txValue);
   }
+  delay(2000);
+  */
 }
