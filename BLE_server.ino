@@ -20,9 +20,10 @@ int runningFlag = -1; // -1: let motor to stop running, 0: let motor to run
 #define SERVO_PIN 18
 #define LED_PIN 0  // alert
 #define THUMB_LED 4  // thumb
-#define SECOND_LED 16  // 2nd metatarsal head
+#define SECOND_LED 2  // 2nd metatarsal head
 #define THIRD_LED 17  // 3rd metatarsal head
 #define FORTH_LED 5  // 4th metatatsal head
+#define STATUS_LED 19 // status led
 #define SERVICE_UUID           "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define CHARACTERISTIC_UUID_TX "beb5483e-36e1-4688-b7f5-ea07361b26a8"
 #define CHARACTERISTIC_UUID_RX "828917c1-ea55-4d4a-a66e-fd202cea0645"
@@ -72,6 +73,8 @@ class MyCallbacks: public BLECharacteristicCallbacks{
         runningFlag = 3;  // turn on LED to let user know where to lay the foot
       } else if(rxValue.find("4") != -1){
         runningFlag = 4;  // turn on LED to let user know where to lay the foot
+      } else if(rxValue.find("5") != -1){
+        runningFlag = -1;
       }
       Serial.println("RunningFlag = " + String(runningFlag));
       Serial.println("==== END RECEIVE DATA ====");
@@ -89,11 +92,13 @@ void setup() {
   pinMode(SECOND_LED, OUTPUT);
   pinMode(THIRD_LED, OUTPUT);
   pinMode(FORTH_LED, OUTPUT);
+  pinMode(STATUS_LED, OUTPUT);
   digitalWrite(LED_PIN, LOW);
   digitalWrite(THUMB_LED, LOW);
   digitalWrite(SECOND_LED, LOW);
   digitalWrite(THIRD_LED, LOW);
   digitalWrite(FORTH_LED, LOW);
+  digitalWrite(STATUS_LED, LOW);
   Serial.println("Starting BLE work!");
 
   // Create the BLE Device
@@ -136,7 +141,7 @@ void setup() {
   // Start adverising (showing BLE name to connect to)
   BLEDevice::startAdvertising();
   Serial.println("Waiting for a client connection to notify...");
-  digitalWrite(THUMB_LED, HIGH);
+  digitalWrite(STATUS_LED, HIGH);
 }
 
 void loop() {
@@ -163,6 +168,8 @@ void loop() {
       Serial.println("Testing on the Forth metatarsal head");
       digitalWrite(FORTH_LED, HIGH);
       runningFlag = -1;
+    } else if(runningFlag == -1){
+      turn_off_all_leds();
     }
   }
   delay(2000);
