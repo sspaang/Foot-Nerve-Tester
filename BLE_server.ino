@@ -11,6 +11,7 @@ BLECharacteristic *pCharacteristic; // BLE Charactieristics
 
 bool deviceConnected = false;
 String txValue = "0";
+int runningFlag = -1; // -1: let motor to stop running, 0: let motor to run
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
@@ -42,69 +43,6 @@ class MyServerCallbacks: public BLEServerCallbacks{
 
 // Check if there has incoming data or not
 class MyCallbacks: public BLECharacteristicCallbacks{
-  
-  void motor_start(int LED_POINTER){
-    digitalWrite(LED_POINTER, HIGH);
-
-    if(txValue == "0"){
-      txValue = "1";  // motor is working
-    }
-    
-    for(int pos = 0; pos <= 90; pos+=2)
-    { 
-      int forceSensorValue = analogRead(FORCE_SENSOR_PIN);
-  
-      Serial.print("Force sensor value: ");
-      Serial.print(forceSensorValue);
-      Serial.print("\t");
-      Serial.print("Servo position: ");
-      Serial.print(pos);
-      Serial.print("\t");
-      
-      myservo.write(pos);
-      
-      if(forceSensorValue > 160)
-      {
-        Serial.println("LED ON");
-        digitalWrite(LED_PIN, HIGH);
-        Serial.println("Hold for 1.5 sec");
-        delay(1500);
-        break;
-      } else {
-        Serial.println("LED OFF");
-        digitalWrite(LED_PIN, LOW);
-      }
-      delay(200);
-    }
-  
-    Serial.println("Finish");
-    myservo.write(0);
-    
-    if(txValue == "1"){
-        txValue = "0";  // the motor is ready
-    }
-    
-    digitalWrite(LED_PIN, LOW);
-    delay(1000);
-    digitalWrite(LED_POINTER, LOW);
-    delay(2000);
-  }
-  
-  void turn_off_all_leds(){
-    digitalWrite(THUMB_LED, LOW);
-    digitalWrite(SECOND_LED, LOW);
-    digitalWrite(THIRD_LED, LOW);
-    digitalWrite(FORTH_LED, LOW);
-  }
-
-  void notifyValue(){
-    // Setting the value to the characteristic
-    pCharacteristic->setValue(txValue.c_str());
-  
-    // Notify the connected client
-    pCharacteristic->notify();
-    Serial.println("Notify Value: " + txValue);
-  }
 
   void onRead(BLECharacteristic *pCharacteristic){
     pCharacteristic->setValue(txValue.c_str());
@@ -124,29 +62,18 @@ class MyCallbacks: public BLECharacteristicCallbacks{
 
       Serial.println();
 
-      turn_off_all_leds();
-      digitalWrite(THUMB_LED, HIGH);
-      if(rxValue.find("1") != -1){
-        turn_off_all_leds();
-        Serial.println("Testing on the Thumb");
-        motor_start(THUMB_LED);
-        digitalWrite(SECOND_LED, HIGH);
+      if(rxValue.find("0") != -1){
+        runningFlag = 0;  // let motor run
+      } else if(rxValue.find("1") != -1){
+        runningFlag = 1;  // turn on LED to let user know where to lay the foot
       } else if(rxValue.find("2") != -1){
-        turn_off_all_leds();
-        Serial.println("Testing on the Second metatarsal head");
-        motor_start(SECOND_LED);
-        digitalWrite(THIRD_LED, HIGH);
+        runningFlag = 2;  // turn on LED to let user know where to lay the foot
       } else if(rxValue.find("3") != -1){
-        turn_off_all_leds();
-        Serial.println("Testing on the Third metatarsal head");
-        motor_start(THIRD_LED);
-        digitalWrite(FORTH_LED, HIGH);
+        runningFlag = 3;  // turn on LED to let user know where to lay the foot
       } else if(rxValue.find("4") != -1){
-        turn_off_all_leds();
-        Serial.println("Testing on the Forth metatarsal head");
-        motor_start(FORTH_LED);
-        turn_off_all_leds();
+        runningFlag = 4;  // turn on LED to let user know where to lay the foot
       }
+      Serial.println("RunningFlag = " + String(runningFlag));
       Serial.println("==== END RECEIVE DATA ====");
       Serial.println();
     }
@@ -213,15 +140,93 @@ void setup() {
 }
 
 void loop() {
-  /*
   if(deviceConnected){
-    // Setting the value to the characteristic
-    pCharacteristic->setValue(txValue.c_str());
-  
-    // Notify the connected client
-    pCharacteristic->notify();
-    Serial.println("Notify Value: " + txValue);
+    if(runningFlag == 0){
+      motor_start();
+    } else if(runningFlag == 1){
+      turn_off_all_leds();
+      Serial.println("Testing on the Thumb");
+      digitalWrite(THUMB_LED, HIGH);
+      runningFlag = -1;
+    } else if(runningFlag == 2){
+      turn_off_all_leds();
+      Serial.println("Testing on the Second metatarsal head");
+      digitalWrite(SECOND_LED, HIGH);
+      runningFlag = -1;
+    } else if(runningFlag == 3){
+      turn_off_all_leds();
+      Serial.println("Testing on the Third metatarsal head");
+      digitalWrite(THIRD_LED, HIGH);
+      runningFlag = -1;
+    } else if(runningFlag == 4){
+      turn_off_all_leds();
+      Serial.println("Testing on the Forth metatarsal head");
+      digitalWrite(FORTH_LED, HIGH);
+      runningFlag = -1;
+    }
   }
   delay(2000);
-  */
+}
+
+void motor_start(){
+
+  if(txValue == "0"){
+    txValue = "1";  // motor is working
+  }
+  notifyValue();  // notify motor status
+  
+  for(int pos = 0; pos <= 90; pos+=2)
+  { 
+    int forceSensorValue = analogRead(FORCE_SENSOR_PIN);
+
+    Serial.print("Force sensor value: ");
+    Serial.print(forceSensorValue);
+    Serial.print("\t");
+    Serial.print("Servo position: ");
+    Serial.print(pos);
+    Serial.print("\t");
+    
+    myservo.write(pos);
+    
+    if(forceSensorValue > 160)
+    {
+      Serial.println("LED ON");
+      digitalWrite(LED_PIN, HIGH);
+      Serial.println("Hold for 1.5 sec");
+      delay(1500);
+      break;
+    } else {
+      Serial.println("LED OFF");
+      digitalWrite(LED_PIN, LOW);
+    }
+    delay(200);
+  }
+
+  Serial.println("Finish");
+  myservo.write(0);
+  
+  if(txValue == "1"){
+    txValue = "0";  // the motor is ready
+    runningFlag = -1;
+  }
+  notifyValue();
+  digitalWrite(LED_PIN, LOW);
+  turn_off_all_leds();
+  delay(1000);
+}
+
+void turn_off_all_leds(){
+  digitalWrite(THUMB_LED, LOW);
+  digitalWrite(SECOND_LED, LOW);
+  digitalWrite(THIRD_LED, LOW);
+  digitalWrite(FORTH_LED, LOW);
+}
+
+void notifyValue(){
+  // Setting the value to the characteristic
+  pCharacteristic->setValue(txValue.c_str());
+
+  // Notify the connected client
+  pCharacteristic->notify();
+  Serial.println("Notify Value: " + txValue);
 }
