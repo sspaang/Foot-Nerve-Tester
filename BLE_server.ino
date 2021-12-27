@@ -11,7 +11,7 @@ BLECharacteristic *pCharacteristic; // BLE Charactieristics
 
 bool deviceConnected = false;
 String txValue = "0";
-int runningFlag = -1; // -1: let motor to stop running, 0: let motor to run
+int runningFlag = -1; // -1: let motor stop working, 0: let motor start working
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
@@ -19,10 +19,10 @@ int runningFlag = -1; // -1: let motor to stop running, 0: let motor to run
 #define FORCE_SENSOR_PIN 36 // GIOP36 (ADC0)
 #define SERVO_PIN 18
 #define LED_PIN 0  // alert
-#define THUMB_LED 4  // thumb
-#define SECOND_LED 2  // 2nd metatarsal head
-#define THIRD_LED 17  // 3rd metatarsal head
-#define FORTH_LED 5  // 4th metatatsal head
+#define THUMB_LED 4  //  right thumb
+#define SECOND_LED 2  // right 2nd metatarsal head
+#define THIRD_LED 17  // right 3rd metatarsal head
+#define FORTH_LED 5  // right 4th metatatsal head
 #define STATUS_LED 19 // status led
 #define SERVICE_UUID           "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define CHARACTERISTIC_UUID_TX "beb5483e-36e1-4688-b7f5-ea07361b26a8"
@@ -66,17 +66,24 @@ class MyCallbacks: public BLECharacteristicCallbacks{
       if(rxValue.find("0") != -1){
         runningFlag = 0;  // let motor run
       } else if(rxValue.find("1") != -1){
-        runningFlag = 1;  // turn on LED to let user know where to lay the foot
+        Serial.println("Testing on the Thumb");
+        digitalWrite(THUMB_LED, HIGH);
       } else if(rxValue.find("2") != -1){
-        runningFlag = 2;  // turn on LED to let user know where to lay the foot
+        Serial.println("Testing on the Second metatarsal head");
+        digitalWrite(SECOND_LED, HIGH);
       } else if(rxValue.find("3") != -1){
-        runningFlag = 3;  // turn on LED to let user know where to lay the foot
+        Serial.println("Testing on the Third metatarsal head");
+        digitalWrite(THIRD_LED, HIGH);
       } else if(rxValue.find("4") != -1){
-        runningFlag = 4;  // turn on LED to let user know where to lay the foot
+        Serial.println("Testing on the Forth metatarsal head");
+        digitalWrite(FORTH_LED, HIGH);
       } else if(rxValue.find("5") != -1){
-        runningFlag = -1;
+        // turn off all leds
+        digitalWrite(THUMB_LED, LOW);
+        digitalWrite(SECOND_LED, LOW);
+        digitalWrite(THIRD_LED, LOW);
+        digitalWrite(FORTH_LED, LOW);
       }
-      Serial.println("RunningFlag = " + String(runningFlag));
       Serial.println("==== END RECEIVE DATA ====");
       Serial.println();
     }
@@ -126,7 +133,6 @@ void setup() {
                                          BLECharacteristic::PROPERTY_READ
                                        );
   pCharacteristic->setCallbacks(new MyCallbacks());
-  pCharacteristic->setValue(txValue.c_str()); // inform client that motor is ready
   
   // Start the service
   pService->start();
@@ -148,29 +154,9 @@ void loop() {
   if(deviceConnected){
     if(runningFlag == 0){
       motor_start();
-    } else if(runningFlag == 1){
-      turn_off_all_leds();
-      Serial.println("Testing on the Thumb");
-      digitalWrite(THUMB_LED, HIGH);
-      runningFlag = -1;
-    } else if(runningFlag == 2){
-      turn_off_all_leds();
-      Serial.println("Testing on the Second metatarsal head");
-      digitalWrite(SECOND_LED, HIGH);
-      runningFlag = -1;
-    } else if(runningFlag == 3){
-      turn_off_all_leds();
-      Serial.println("Testing on the Third metatarsal head");
-      digitalWrite(THIRD_LED, HIGH);
-      runningFlag = -1;
-    } else if(runningFlag == 4){
-      turn_off_all_leds();
-      Serial.println("Testing on the Forth metatarsal head");
-      digitalWrite(FORTH_LED, HIGH);
-      runningFlag = -1;
-    } else if(runningFlag == -1){
-      turn_off_all_leds();
     }
+
+    Serial.println("Running Flag: " + String(runningFlag));
   }
   delay(2000);
 }
