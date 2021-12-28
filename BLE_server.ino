@@ -18,11 +18,14 @@ int runningFlag = -1; // -1: let motor stop working, 0: let motor start working
 
 #define FORCE_SENSOR_PIN 36 // GIOP36 (ADC0)
 #define SERVO_PIN 18
-#define LED_PIN 0  // alert
-#define THUMB_LED 4  //  right thumb
-#define SECOND_LED 2  // right 2nd metatarsal head
-#define THIRD_LED 17  // right 3rd metatarsal head
-#define FORTH_LED 5  // right 4th metatatsal head
+#define LED_PIN 0     // alert
+#define FIRST_LED 4   // left thumb
+#define SECOND_LED 2  // left 2nd metatarsal head
+#define THIRD_LED 17  // left and right 3rd metatarsal head
+#define FORTH_LED 5   // left 4th metatatsal head
+#define FIFTH_LED 12  // right thumb
+#define SIXTH_LED 14  // right 2nd metatarsal head
+#define SEVENTH_LED 27  // right 4th metatarsal head
 #define STATUS_LED 19 // status led
 #define SERVICE_UUID           "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define CHARACTERISTIC_UUID_TX "beb5483e-36e1-4688-b7f5-ea07361b26a8"
@@ -66,23 +69,35 @@ class MyCallbacks: public BLECharacteristicCallbacks{
       if(rxValue.find("0") != -1){
         runningFlag = 0;  // let motor run
       } else if(rxValue.find("1") != -1){
-        Serial.println("Testing on the Thumb");
-        digitalWrite(THUMB_LED, HIGH);
+        Serial.println("Testing on the Left thumb");
+        digitalWrite(FIRST_LED, HIGH);
       } else if(rxValue.find("2") != -1){
-        Serial.println("Testing on the Second metatarsal head");
+        Serial.println("Testing on the Left second metatarsal head");
         digitalWrite(SECOND_LED, HIGH);
       } else if(rxValue.find("3") != -1){
-        Serial.println("Testing on the Third metatarsal head");
+        Serial.println("Testing on the Left or Right third metatarsal head");
         digitalWrite(THIRD_LED, HIGH);
       } else if(rxValue.find("4") != -1){
-        Serial.println("Testing on the Forth metatarsal head");
+        Serial.println("Testing on the Left forth metatarsal head");
         digitalWrite(FORTH_LED, HIGH);
       } else if(rxValue.find("5") != -1){
+       Serial.println("Testing on the Right thumb");
+        digitalWrite(FIFTH_LED, HIGH);
+      } else if(rxValue.find("6") != -1){
+        Serial.println("Testing on the Right second metatarsal head");
+        digitalWrite(SIXTH_LED, HIGH);
+      } else if(rxValue.find("7") != -1){
+        Serial.println("Testing on the Right forth metatarsal head");
+        digitalWrite(SEVENTH_LED, HIGH);
+      } else if(rxValue.find("8") != -1){
         // turn off all leds
-        digitalWrite(THUMB_LED, LOW);
+        digitalWrite(FIRST_LED, LOW);
         digitalWrite(SECOND_LED, LOW);
         digitalWrite(THIRD_LED, LOW);
         digitalWrite(FORTH_LED, LOW);
+        digitalWrite(FIFTH_LED, LOW);
+        digitalWrite(SIXTH_LED, LOW);
+        digitalWrite(SEVENTH_LED, LOW);
       }
       Serial.println("==== END RECEIVE DATA ====");
       Serial.println();
@@ -95,16 +110,22 @@ void setup() {
   myservo.attach(SERVO_PIN);
   myservo.write(0);
   pinMode(LED_PIN, OUTPUT);
-  pinMode(THUMB_LED, OUTPUT);
+  pinMode(FIRST_LED, OUTPUT);
   pinMode(SECOND_LED, OUTPUT);
   pinMode(THIRD_LED, OUTPUT);
   pinMode(FORTH_LED, OUTPUT);
+  pinMode(FIFTH_LED, OUTPUT);
+  pinMode(SIXTH_LED, OUTPUT);
+  pinMode(SEVENTH_LED, OUTPUT);
   pinMode(STATUS_LED, OUTPUT);
   digitalWrite(LED_PIN, LOW);
-  digitalWrite(THUMB_LED, LOW);
+  digitalWrite(FIRST_LED, LOW);
   digitalWrite(SECOND_LED, LOW);
   digitalWrite(THIRD_LED, LOW);
   digitalWrite(FORTH_LED, LOW);
+  digitalWrite(FIFTH_LED, LOW);
+  digitalWrite(SIXTH_LED, LOW);
+  digitalWrite(SEVENTH_LED, LOW);
   digitalWrite(STATUS_LED, LOW);
   Serial.println("Starting BLE work!");
 
@@ -129,8 +150,7 @@ void setup() {
   // Characteristic for Writing and Reading data
   BLECharacteristic *pCharacteristic = pService->createCharacteristic(
                                          CHARACTERISTIC_UUID_RX,
-                                         BLECharacteristic::PROPERTY_WRITE |
-                                         BLECharacteristic::PROPERTY_READ
+                                         BLECharacteristic::PROPERTY_WRITE
                                        );
   pCharacteristic->setCallbacks(new MyCallbacks());
   
@@ -209,10 +229,13 @@ void motor_start(){
 }
 
 void turn_off_all_leds(){
-  digitalWrite(THUMB_LED, LOW);
+  digitalWrite(FIRST_LED, LOW);
   digitalWrite(SECOND_LED, LOW);
   digitalWrite(THIRD_LED, LOW);
   digitalWrite(FORTH_LED, LOW);
+  digitalWrite(FIFTH_LED, LOW);
+  digitalWrite(SIXTH_LED, LOW);
+  digitalWrite(SEVENTH_LED, LOW);
 }
 
 void notifyValue(){
