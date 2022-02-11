@@ -42,6 +42,14 @@ class MyServerCallbacks: public BLEServerCallbacks{
     Serial.println("Disconnectd");
     deviceConnected = false;
     pServer->getAdvertising()->start();
+    
+    digitalWrite(FIRST_LED, LOW);
+    digitalWrite(SECOND_LED, LOW);
+    digitalWrite(THIRD_LED, LOW);
+    digitalWrite(FORTH_LED, LOW);
+    digitalWrite(FIFTH_LED, LOW);
+    digitalWrite(SIXTH_LED, LOW);
+    digitalWrite(SEVENTH_LED, LOW);
   }
 };
 
