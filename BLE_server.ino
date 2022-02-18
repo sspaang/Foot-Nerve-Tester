@@ -16,7 +16,7 @@ int runningFlag = -1; // -1: let motor stop working, 0: let motor start working
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
 
-#define FORCE_SENSOR_PIN 36 // GIOP36 (ADC0)
+#define FORCE_SENSOR_PIN 34 // GIOP34 (ADC6)
 #define SERVO_PIN 18
 #define LED_PIN 0     // alert
 #define FIRST_LED 4   // left thumb
@@ -219,6 +219,11 @@ void motor_start(){
     } else {
       Serial.println("LED OFF");
       digitalWrite(LED_PIN, LOW);
+      
+      if(pos == 90){
+        Serial.println("Hold for 1.5 sec");
+        delay(1500);
+      }
     }
     delay(200);
   }
